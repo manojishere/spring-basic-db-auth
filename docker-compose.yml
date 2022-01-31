@@ -1,0 +1,23 @@
+version: '3.8'
+
+networks:
+    default:	
+services:
+    db:
+        image: mysql:5.7
+        container_name: mysqlAppDB
+        ports: 
+          -  3306:3306
+        volumes:
+          -  "./.mysqlData/db:/var/lib/mysql"
+        environment:
+          MYSQL_ROOT_PASSWORD: pass
+          MYSQL_DATABASE: mysqlAppDB
+
+    mysqlAdmin:
+        image: phpmyadmin/phpmyadmin
+        container_name: pma
+        ports:
+          -  8081:80
+        environment:
+          PMA_HOST: db
