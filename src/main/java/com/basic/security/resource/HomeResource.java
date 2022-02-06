@@ -1,5 +1,7 @@
 package com.basic.security.resource;
 
+import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,6 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -35,8 +39,9 @@ public class HomeResource {
 	@PostMapping("/authenticate")
 	public ResponseEntity<?> createAuthenticationToken( 
 			@RequestBody AuthenticationRequest authRequest ) throws Exception{
+		Authentication authentication;
 		try {
-			authenticationManager.authenticate( 
+			authentication = authenticationManager.authenticate( 
 				new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword()));
 		}catch( BadCredentialsException bce ) {
 			logger.error( "BadCredentialsException Incorrect username and password : " + bce );
@@ -45,11 +50,36 @@ public class HomeResource {
 			logger.error( "Exception : " + e );
 			throw new Exception( "Incorrect username and password");
 		}
-		
+		getUserDetails( authentication );
+		/*
 		final UserDetails userDetails = userDetailsService.loadUserByUsername( 
 				authRequest.getUsername() );
 		final String jwt = jwtTokenUtil.generateToken( userDetails );
+		*/
+		final String jwt = generateToken( authentication );
 		return ResponseEntity.ok( new AuthenticationResponse( jwt ) );
+	}
+	
+	private String generateToken( Authentication authentication ) {
+		logger.info(" generateToken : " );
+        final String authorities = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.joining(","));
+        final String username = authentication.getName();
+        logger.info(" generateToken username : authorities :: " + username + " : " + authorities);
+        final String jwt = jwtTokenUtil.createToken( authorities,  username);
+        logger.info(" generateToken : jwt :: " + jwt );
+		return jwt;
+	}
+	
+	
+	private void getUserDetails( Authentication authentication) {
+		
+        final String authorities = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.joining(","));		
+		
+		logger.info(" getUserDetails : " + authorities );
 	}
 	
 	@GetMapping("/")
