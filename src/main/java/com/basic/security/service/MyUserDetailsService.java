@@ -33,7 +33,7 @@ public class MyUserDetailsService implements UserDetailsService{
 			logger.debug("inside loadUserByUsername from DB : " + user.get().toString() );
 			
 			user.orElseThrow( () -> new UsernameNotFoundException( "Not Found : " + userName ) );
-			return user.map( MyUserDetails :: new ).get();
+			return null;
 			
 		}catch( Exception e ) {
 			logger.error("loadUserByUsername : " + e.getStackTrace());

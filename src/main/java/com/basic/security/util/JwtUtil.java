@@ -45,11 +45,26 @@ public class JwtUtil {
 	}	
 	
 	public String generateToken( UserDetails userDetails ) {
+		logger.debug(" generateToken : userDetails : " + userDetails.getUsername());
 		Map<String, Object> claims  = new HashMap<>();
 		return createToken( claims, userDetails.getUsername() );
 		
 	}
+	
+	public String generateToken( String authorities, String username ) {
+		logger.info(" generateToken username : authorities :: " + username + " : " + authorities);
+		Map<String, Object> claims  = new HashMap<>();
+		return createToken( authorities, username );
+		
+	}	
+	
+	public String createToken( String authorities, String subject ) {
+		return Jwts.builder().claim( "AUTHORITIES_KEY",  authorities ).setSubject( subject ).setIssuedAt( new Date( System.currentTimeMillis() ) )
+				.setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10))
+				.signWith(SignatureAlgorithm.HS256, SECRET_KEY).compact();
+	}	
  	
+	
 	public String createToken( Map<String, Object> claims, String subject ) {
 		return Jwts.builder().setClaims( claims ).setSubject( subject ).setIssuedAt( new Date( System.currentTimeMillis() ) )
 				.setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10))
