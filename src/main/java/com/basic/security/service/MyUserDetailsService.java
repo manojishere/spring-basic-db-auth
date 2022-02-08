@@ -1,10 +1,13 @@
 package com.basic.security.service;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -23,17 +26,31 @@ public class MyUserDetailsService implements UserDetailsService{
 	UserRepository userRepository;
 	
 	@Override
-	public UserDetails loadUserByUsername(String userName) throws UsernameNotFoundException {
-		Optional<User> user = null;
+	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+		Optional<User> userOptional = null;
 		try {
-			logger.debug("inside loadUserByUsername from request: " + userName );
+			logger.debug("inMyUserDetailsServiceside loadUserByUsername Start: " + username );
 			
-			user = userRepository.findByUsername( userName );
+			userOptional = userRepository.findByUsername( username );
 			
-			logger.debug("inside loadUserByUsername from DB : " + user.get().toString() );
+			logger.debug("MyUserDetailsService loadUserByUsername from DB : " + userOptional.get().toString() );
 			
-			user.orElseThrow( () -> new UsernameNotFoundException( "Not Found : " + userName ) );
-			return user.map( MyUserDetails :: new ).get();
+			userOptional.orElseThrow( () -> new UsernameNotFoundException( "Not Found : " + username ) );
+
+		    User user = null;
+			if( !userOptional.isPresent() ) {
+				throw new UsernameNotFoundException( "UserName Not Found : " + username );
+			}
+			user = userOptional.get();
+			
+			List<GrantedAuthority> userRolesFromDB = 
+					AuthorityUtils.commaSeparatedStringToAuthorityList( user.getRoles());
+			
+			final MyUserDetails myUserDetails = new MyUserDetails( 
+					username, "fake", userRolesFromDB );			
+			myUserDetails.setActive( user.isActive() );			
+			
+			return myUserDetails;
 			
 		}catch( Exception e ) {
 			logger.error("loadUserByUsername : " + e.getStackTrace());

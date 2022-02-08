@@ -19,6 +19,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.security.ldap.authentication.ad.ActiveDirectoryLdapAuthenticationProvider;
 
 import com.basic.security.filters.JwtRequestFilter;
+import com.basic.security.service.MyUserDetailsContextMapper;
 
 // https://github.com/koushikkothagal/spring-security-jwt
 
@@ -32,6 +33,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	
 	@Autowired
 	JwtRequestFilter jwtRequestFilter;
+	
+	@Autowired
+	MyUserDetailsContextMapper myUserDetailsContextMapper;
 
 	/*
 	@Override
@@ -46,11 +50,23 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	}
 	*/
 	
+	/*
 	@Override
 	protected void configure(AuthenticationManagerBuilder authManagerBuilder) throws Exception {
-		logger.info("overridden configure called for AuthenticationManagerBuilder...");
+		logger.info("SecurityConfig configure(AuthenticationManagerBuilder)1");
 		authManagerBuilder.authenticationProvider(activeDirectoryLdapAuthenticationProvider())
 				.userDetailsService( userDetailsService );
+				
+	}
+	*/
+	
+	@Override
+	protected void configure(AuthenticationManagerBuilder authManagerBuilder) throws Exception {
+		logger.info("SecurityConfig configure(AuthenticationManagerBuilder)1");
+		authManagerBuilder.authenticationProvider(activeDirectoryLdapAuthenticationProvider());
+
+		// CN=Manoj Singh,OU=ALP,OU=Accounts,OU=INCOMM,DC=uss,DC=net
+		// AuthenticationManagerBuilder userDetailsContextMapper
 	}	
 
 	/*
@@ -79,6 +95,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
+		logger.info("SecurityConfig configure(HttpSecurity http)");
 		http.csrf().disable()
 			.authorizeRequests().antMatchers("/authenticate").permitAll()
 			//.anyRequest().authenticated()
@@ -100,7 +117,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	@Bean
 	@Override
 	public AuthenticationManager authenticationManagerBean() throws Exception {
-		logger.debug("AuthenticationManager called...");
+		logger.info("SecurityConfig AuthenticationManager authenticationManagerBean()");
 		return new ProviderManager(Arrays.asList(activeDirectoryLdapAuthenticationProvider()));
 	}	
 	
@@ -113,7 +130,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	
 	@Bean
 	public AuthenticationProvider activeDirectoryLdapAuthenticationProvider() {
-		logger.debug("activeDirectoryLdapAuthenticationProvider called...");
+		logger.info("SecurityConfig AuthenticationProvider activeDirectoryLdapAuthenticationProvider()");
 		ActiveDirectoryLdapAuthenticationProvider provider = new ActiveDirectoryLdapAuthenticationProvider("uss.net",
 				"ldaps://ldap-qts.uss.net");
 
@@ -125,6 +142,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 		provider.setSearchFilter("sAMAccountName={1}");
 		provider.setConvertSubErrorCodesToExceptions(true);
 		provider.setUseAuthenticationRequestCredentials(true);
+		provider.setUserDetailsContextMapper( myUserDetailsContextMapper );;
 
 		return provider;
 	}	
